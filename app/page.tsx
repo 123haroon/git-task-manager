@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer } from "react";
+import { useReducer, type FormEvent } from "react";
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ListTodo } from "lucide-react";
+import { Plus, ListTodo, Trash2 } from "lucide-react";
 
 type Task = {
   id: string;
@@ -23,7 +23,10 @@ type TaskState = {
   tasks: Task[];
 };
 
-type TaskAction = { type: "SET_INPUT"; payload: string } | { type: "ADD_TASK" };
+type TaskAction =
+  | { type: "SET_INPUT"; payload: string }
+  | { type: "ADD_TASK" }
+  | { type: "DELETE_TASK"; payload: string };
 
 const initialState: TaskState = {
   input: "",
@@ -56,6 +59,13 @@ function taskReducer(state: TaskState, action: TaskAction): TaskState {
         ],
       };
 
+    // NEW: Delete Task
+    case "DELETE_TASK":
+      return {
+        ...state,
+        tasks: state.tasks.filter((task) => task.id !== action.payload),
+      };
+
     default:
       return state;
   }
@@ -64,9 +74,16 @@ function taskReducer(state: TaskState, action: TaskAction): TaskState {
 export default function Home() {
   const [state, dispatch] = useReducer(taskReducer, initialState);
 
-  function handleSubmit(e) {
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     dispatch({ type: "ADD_TASK" });
+  }
+
+  function handleDelete(id: string) {
+    dispatch({
+      type: "DELETE_TASK",
+      payload: id,
+    });
   }
 
   return (
@@ -117,7 +134,7 @@ export default function Home() {
                 }
               />
 
-              <Button variant={"success"} type="submit">
+              <Button variant="success" type="submit">
                 <Plus className="size-4" />
                 Add
               </Button>
@@ -135,11 +152,27 @@ export default function Home() {
             {state.tasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between rounded-lg border p-4"
+                className="flex items-center justify-between gap-3 rounded-lg border p-4"
               >
-                <span className="text-sm font-medium">{task.title}</span>
+                <span className="min-w-0 break-words text-sm font-medium">
+                  {task.title}
+                </span>
 
-                <Badge variant="secondary">Pending</Badge>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant="secondary">Pending</Badge>
+
+                  {/* NEW: Delete Button */}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDelete(task.id)}
+                    aria-label={`Delete ${task.title}`}
+                    title="Delete task"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
             ))}
 
